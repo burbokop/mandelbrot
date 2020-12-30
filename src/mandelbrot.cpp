@@ -5,25 +5,6 @@
 
 #include <src/graphics/abstractrenderer.h>
 
-template <typename T>
-T mandel_func(T x, T c) { return x * x + c; }
-
-bool is_in_mandel(e172::Complex c, size_t limit = 256) {
-    e172::Complex x = { 0, 0 };
-    while (std::abs(x) < 2) {
-        x = mandel_func(x, c);
-        if(limit-- <= 0) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool vec_is_in_mandel(e172::Vector c, size_t limit = 256) {
-    return is_in_mandel(c.toComplex(), limit);
-}
-
-
 Mandelbrot::Mandelbrot() {}
 
 void Mandelbrot::proceed(e172::Context *context, e172::AbstractEventHandler *eventHandler) {
@@ -55,7 +36,7 @@ void Mandelbrot::render(e172::AbstractRenderer *renderer) {
             for(size_t x = 0; x < N; ++x) {
                 const auto c = e172::Vector { double(x) / double(N) - 0.5, double(y) / double(N) - 0.5 } * 4;
 
-                if(vec_is_in_mandel(c, limit)) {
+                if(c.mandelbrot_level(limit)) {
                     renderer->drawPixelShifted(c * renderer->resolution().min() * 0.5 * zoom, 0x00ff00);
                 }
             }
