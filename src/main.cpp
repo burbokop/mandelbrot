@@ -6,10 +6,16 @@
 
 const size_t width = 600;
 const size_t height = 600;
-const size_t depth = 32;
-const e172::Color colorMask = e172::argb(0xff, 0xff, 0x88, 0);
 
 int main(int argc, char **argv) {
+    size_t depth = 32;
+    e172::Color colorMask = 0xff0000ff;
+    if(argc > 1)
+        depth = std::stoi(argv[1]);
+
+    if(argc > 2)
+        colorMask = std::stoi(argv[2], nullptr, 16);
+
     e172::GameApplication app(argc, argv);
     SDLGraphicsProvider graphicsProvider(app.arguments(), "Mandelbrot", width, height);
     SDLEventHandler eventHandler;
