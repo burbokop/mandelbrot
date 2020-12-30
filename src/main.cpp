@@ -11,10 +11,10 @@ int main(int argc, char **argv) {
     size_t depth = 32;
     e172::Color colorMask = 0xff0000ff;
     if(argc > 1)
-        depth = std::stoi(argv[1]);
+        depth = std::stoul(argv[1]);
 
     if(argc > 2)
-        colorMask = std::stoi(argv[2], nullptr, 16);
+        colorMask = std::stoul(argv[2], nullptr, 16);
 
     e172::GameApplication app(argc, argv);
     SDLGraphicsProvider graphicsProvider(app.arguments(), "Mandelbrot", width, height);
