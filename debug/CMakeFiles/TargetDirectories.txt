@@ -1,0 +1,5 @@
+/home/boris/projects/cpp/mandelbrot/debug/CMakeFiles/mandelbrot.dir
+/home/boris/projects/cpp/mandelbrot/debug/CMakeFiles/rebuild_cache.dir
+/home/boris/projects/cpp/mandelbrot/debug/CMakeFiles/e172.dir
+/home/boris/projects/cpp/mandelbrot/debug/CMakeFiles/sdl_impl.dir
+/home/boris/projects/cpp/mandelbrot/debug/CMakeFiles/edit_cache.dir
