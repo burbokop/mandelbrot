@@ -7,12 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
-add_executable(mandelbrot
-    src/main.cpp
-    src/mandelbrot.cpp
-    src/mandelbrot.h
-    )
-
+add_executable(mandelbrot src/main.cpp)
 
 include(${CMAKE_CURRENT_LIST_DIR}/e172/e172.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/sdl_implementation/sdl_implementation.cmake)
