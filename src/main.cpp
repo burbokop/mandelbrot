@@ -41,9 +41,11 @@ int main(int argc, char **argv) {
     const std::map<std::string, e172::ComplexFunction> complexFunctions = {
         { "x", [](const auto& x){ return x; } },
         { "sqr", e172::Math::sqr<e172::Complex> },
-        { "tan_sqr", [](const auto& x){ return std::tan(x * x); } },
+        { "sin", [](const auto& x){ return std::sin(x); } },
+        { "cos", [](const auto& x){ return std::cos(x); } },
         { "sin_sqr", [](const auto& x){ return std::sin(x * x); } },
         { "cos_sqr", [](const auto& x){ return std::cos(x * x); } },
+        { "tan_sqr", [](const auto& x){ return std::tan(x * x); } },
         { "asin_sqr", [](const auto& x){ return std::asin(x * x); } },
         { "log_sqr", [](const auto& x){ return std::log(x * x); } },
         { "exp_sqr", [](const auto& x){ return std::exp(x * x); } },
