@@ -7,7 +7,7 @@
 
 void depth_test(std::ostream& out);
 
-void resolution_test(const std::string &cache_path, std::ostream& out);
+void resolution_test(const std::string &cache_path, std::ostream& out, size_t test_count = 1024);
 
 
 

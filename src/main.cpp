@@ -44,11 +44,14 @@ int main(int argc, char **argv) {
 
     if(argc > 1) {
         if(std::string(argv[1]) == "--test") {
-            resolution_test("resolution_test_cache", std::cout);
+            size_t test_count = 1024;
+            if(argc > 2)
+                test_count = std::stoul(argv[2]);
+            resolution_test("resolution_test_cache", std::cout, test_count);
             std::this_thread::sleep_for(std::chrono::microseconds(4000));
             return 0;
         } else if(std::string(argv[1]) == "--help") {
-            std::cout << "args: [depth] [color mask] [resolution] [use multithreading]\n\nadditional options:\n\t--test - do test\n\t--help - display help\n";
+            std::cout << "args: [depth] [color mask] [resolution] [use multithreading]\n\nadditional options:\n\t--test [test count] - do test (do not run any apps while testing)\n\t--help - display help\n";
             return 0;
         } else {
             depth = std::stoul(argv[1]);
