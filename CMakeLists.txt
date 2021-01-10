@@ -13,8 +13,6 @@ add_executable(mandelbrot
     src/main.cpp
     src/test.cpp
     src/test.h
-    src/serializer.cpp
-    src/serializer.h
     )
 
 include(${CMAKE_CURRENT_LIST_DIR}/e172/e172.cmake)

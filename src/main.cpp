@@ -15,17 +15,17 @@ const size_t width = 600;
 const size_t height = 600;
 
 
-bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, const std::string &path, size_t N, e172::MatrixFiller<e172::Color> fractal) {
+bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, const std::string &path, size_t N, e172::MatrixFiller<e172::Color> fractal, e172::Color backgroundColor) {
     //if(std::filesystem::exists(path))
     //    return true;
 
-    return (graphicsProvider->createImage(N, N, e172::Math::filler(0xffffffff))
+    return (graphicsProvider->createImage(N, N, e172::Math::filler(backgroundColor))
             + graphicsProvider->createImage(N, N, fractal)
             ).save(path);
 }
 
-bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, size_t N, e172::MatrixFiller<e172::Color> fractal, const std::string& description) {
-    return generateMandelbrotImage(graphicsProvider, "./fractal" + std::to_string(N) + description + ".png", N, fractal);
+bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, size_t N, e172::MatrixFiller<e172::Color> fractal, const std::string& description, e172::Color backgroundColor) {
+    return generateMandelbrotImage(graphicsProvider, "./fractal" + std::to_string(N) + description + ".png", N, fractal, backgroundColor);
 }
 
 e172::Image composeWithMandelbrot(e172::AbstractGraphicsProvider *graphicsProvider, const e172::Image &image, const e172::Vector &offset, size_t depth, e172::Color mask) {
@@ -62,20 +62,22 @@ int main(int argc, char **argv) {
     std::pair<std::string, e172::ComplexFunction> currentComplexFunction = *complexFunctions.find(defaultComplexFunctionName);
     size_t depth;
     e172::Color colorMask;
+    e172::Color backgroundColor;
     size_t resolution;
     bool concurent;
 
     //flags registration
-    app.registerBoolFlag  ( "-t", "--test",       "Do optimization test"                        );
-    app.registerValueFlag ( "-C", "--test-count", "Specify test count"                          );
-    app.registerBoolFlag  ( "-w", "--write",      "Write fractal to file"                       );
-    app.registerValueFlag ( "-f", "--func",       "Specify complex function"                    );
-    app.registerBoolFlag  ( "-l", "--func-list",  "Display list of available complex functions" );
+    app.registerBoolFlag  ( "-t", "--test",             "Do optimization test"                        );
+    app.registerValueFlag ( "-C", "--test-count",       "Specify test count"                          );
+    app.registerBoolFlag  ( "-w", "--write",            "Write fractal to file"                       );
+    app.registerValueFlag ( "-f", "--func",             "Specify complex function"                    );
+    app.registerBoolFlag  ( "-l", "--func-list",        "Display list of available complex functions" );
 
-    app.registerValueFlag ( "-d", "--depth",      "Fractal per pixel depth"                     );
-    app.registerValueFlag ( "-m", "--color-mask", "Fractal color mask"                          );
-    app.registerValueFlag ( "-r", "--resolution", "Fractal resolution"                          );
-    app.registerBoolFlag  ( "-c", "--concurent",  "Use multiple threads"                        );
+    app.registerValueFlag ( "-d", "--depth",            "Fractal per pixel depth"                     );
+    app.registerValueFlag ( "-m", "--color-mask",       "Fractal color mask"                          );
+    app.registerValueFlag ( "-r", "--resolution",       "Fractal resolution"                          );
+    app.registerBoolFlag  ( "-c", "--concurent",        "Use multiple threads"                        );
+    app.registerBoolFlag  ( "-b", "--background-color", "Background color"                            );
 
     //func list flag
     if(app.containsFlag("-l")) {
@@ -130,6 +132,16 @@ int main(int argc, char **argv) {
         }
     }
 
+    //color mask flag
+    {
+        auto flag = app.flag("-b");
+        if(flag.isNull()) {
+            backgroundColor = 0xffffffff;
+        } else {
+            backgroundColor = std::stoul(flag.toString(), nullptr, 16);
+        }
+    }
+
     //resolution flag
     {
         auto rFlag = app.flag("-r");
@@ -151,7 +163,7 @@ int main(int argc, char **argv) {
         std::cout << "Write mode.\n";
         std::cout << "Parameters: complex function: " << currentComplexFunction.first << ", resolution: " << resolution << ", color: " << std::hex << colorMask << ", depth: " << std::dec << depth << ", concurent: " << concurent << "\nStarted. Please wait.\n";
         e172::ElapsedTimer timer;
-        generateMandelbrotImage(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first);
+        generateMandelbrotImage(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
         std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
         return 0;
     }
