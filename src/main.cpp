@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
                 << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
                 << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
                 << "\t\"depth\": " << std::dec << depth << ",\n"
-                << "\t\"concurent\": " << concurent << ",\n"
+                << "\t\"concurent\": " << concurent << "\n"
                 << "}\n\n"
                 << "Started. Please wait.\n";
         e172::ElapsedTimer timer;
