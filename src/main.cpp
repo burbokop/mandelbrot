@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     app.registerValueFlag ( "-m", "--color-mask",       "Fractal color mask"                          );
     app.registerValueFlag ( "-r", "--resolution",       "Fractal resolution"                          );
     app.registerBoolFlag  ( "-c", "--concurent",        "Use multiple threads"                        );
-    app.registerBoolFlag  ( "-b", "--background-color", "Background color"                            );
+    app.registerValueFlag  ( "-b", "--background-color", "Background color"                            );
 
     //func list flag
     if(app.containsFlag("-l")) {
@@ -116,15 +116,17 @@ int main(int argc, char **argv) {
 
     //depth flag
     {
-        auto depthFlag = app.flag("-d");
-        if(depthFlag.isNull())
-            depthFlag = 32;
-        depth = depthFlag.toSize_t();
+        const auto depthFlag = app.flag("-d");
+        if(depthFlag.isNull()) {
+            depth = 32;
+        } else {
+            depth = depthFlag.toSize_t();
+        }
     }
 
     //color mask flag
     {
-        auto cmFlag = app.flag("-m");
+        const auto cmFlag = app.flag("-m");
         if(cmFlag.isNull()) {
             colorMask = 0xffff0000;
         } else {
@@ -132,12 +134,13 @@ int main(int argc, char **argv) {
         }
     }
 
-    //color mask flag
+    //background color flag
     {
-        auto flag = app.flag("-b");
+        const auto flag = app.flag("-b");
         if(flag.isNull()) {
             backgroundColor = 0xffffffff;
         } else {
+            std::cout << "bg flag: " << flag << "\n";
             backgroundColor = std::stoul(flag.toString(), nullptr, 16);
         }
     }
@@ -162,13 +165,15 @@ int main(int argc, char **argv) {
         SDLGraphicsProvider gp(app.arguments(), {}, 0, 0);
         std::cout << "Write mode.\n";
         std::cout
-                << "Parameters: complex function: " << currentComplexFunction.first
-                << ", resolution: " << resolution
-                << ", color mask: " << std::hex << colorMask
-                << ", background color: " << std::hex << backgroundColor
-                << ", depth: " << std::dec << depth
-                << ", concurent: " << concurent
-                << "\nStarted. Please wait.\n";
+                << "Parameters {\n"
+                << "\t\"complex function\": " << currentComplexFunction.first << ",\n"
+                << "\t\"resolution\": " << resolution << ",\n"
+                << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
+                << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
+                << "\t\"depth\": " << std::dec << depth << ",\n"
+                << "\t\"concurent\": " << concurent << ",\n"
+                << "}\n\n"
+                << "Started. Please wait.\n";
         e172::ElapsedTimer timer;
         generateMandelbrotImage(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
         std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
