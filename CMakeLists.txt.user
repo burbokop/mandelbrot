@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.14.0, 2020-12-30T16:42:05. -->
+<!-- Written by QtCreator 4.14.0, 2021-01-10T01:56:52. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -213,11 +213,13 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">mandelbrot</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.mandelbrot</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">mandelbrot</value>
+    <value type="QString" key="RunConfiguration.Arguments">--test</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseTerminal">true</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">/home/boris/projects/cpp/mandelbrot/debug</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.RunConfigurationCount">1</value>

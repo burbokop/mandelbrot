@@ -1,3 +1,5 @@
+
+
 cmake_minimum_required(VERSION 3.5)
 
 project(mandelbrot LANGUAGES CXX)
@@ -7,7 +9,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
-add_executable(mandelbrot src/main.cpp)
+add_executable(mandelbrot
+    src/main.cpp
+    src/test.cpp
+    src/test.h
+    src/serializer.cpp
+    src/serializer.h
+    )
 
 include(${CMAKE_CURRENT_LIST_DIR}/e172/e172.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/sdl_implementation/sdl_implementation.cmake)
