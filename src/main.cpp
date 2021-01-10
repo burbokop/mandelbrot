@@ -161,7 +161,14 @@ int main(int argc, char **argv) {
     if(app.containsFlag("-w")) {
         SDLGraphicsProvider gp(app.arguments(), {}, 0, 0);
         std::cout << "Write mode.\n";
-        std::cout << "Parameters: complex function: " << currentComplexFunction.first << ", resolution: " << resolution << ", color: " << std::hex << colorMask << ", depth: " << std::dec << depth << ", concurent: " << concurent << "\nStarted. Please wait.\n";
+        std::cout
+                << "Parameters: complex function: " << currentComplexFunction.first
+                << ", resolution: " << resolution
+                << ", color mask: " << std::hex << colorMask
+                << ", background color: " << std::hex << backgroundColor
+                << ", depth: " << std::dec << depth
+                << ", concurent: " << concurent
+                << "\nStarted. Please wait.\n";
         e172::ElapsedTimer timer;
         generateMandelbrotImage(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
         std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
