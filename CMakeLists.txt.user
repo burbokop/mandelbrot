@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.14.0, 2021-01-10T01:56:52. -->
+<!-- Written by QtCreator 4.14.0, 2021-01-10T14:08:14. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -213,7 +213,6 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">mandelbrot</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.mandelbrot</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">mandelbrot</value>
-    <value type="QString" key="RunConfiguration.Arguments">--test</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
