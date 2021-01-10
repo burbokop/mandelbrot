@@ -43,7 +43,7 @@ void resolution_test(const std::string &cache_path, std::ostream &out) {
     constexpr uint32_t mask = 0xffffffff;
     constexpr size_t depth = 32;
     constexpr size_t multiplier = 8;
-    constexpr size_t test_count = 256;
+    constexpr size_t test_count = 2048;
 
     const auto file = cache_path + std::to_string(test_count) + ".json";
     std::vector<double> x;
