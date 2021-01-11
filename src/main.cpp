@@ -9,11 +9,13 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include "fractalview.h"
 #include "test.h"
 
 const size_t width = 600;
 const size_t height = 600;
 
+using namespace std::complex_literals;
 
 bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, const std::string &path, size_t N, e172::MatrixFiller<e172::Color> fractal, e172::Color backgroundColor) {
     //if(std::filesystem::exists(path))
@@ -74,12 +76,13 @@ int main(int argc, char **argv) {
     app.registerBoolFlag  ( "-w", "--write",            "Write fractal to file"                       );
     app.registerValueFlag ( "-f", "--func",             "Specify complex function"                    );
     app.registerBoolFlag  ( "-l", "--func-list",        "Display list of available complex functions" );
+    app.registerBoolFlag  ( "-s", "--static-display",   "Display static image"                        );
 
     app.registerValueFlag ( "-d", "--depth",            "Fractal per pixel depth"                     );
     app.registerValueFlag ( "-m", "--color-mask",       "Fractal color mask"                          );
     app.registerValueFlag ( "-r", "--resolution",       "Fractal resolution"                          );
     app.registerBoolFlag  ( "-c", "--concurent",        "Use multiple threads"                        );
-    app.registerValueFlag  ( "-b", "--background-color", "Background color"                            );
+    app.registerValueFlag ( "-b", "--background-color", "Background color"                            );
 
     //func list flag
     if(app.containsFlag("-l")) {
@@ -182,13 +185,43 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    //default mode
-    {
-        SDLGraphicsProvider graphicsProvider(app.arguments(), "Fractal View", width, height);
+    //static mode
+    if(app.containsFlag("-s")) {
+        std::cout
+                << "Parameters {\n"
+                << "\t\"complex function\": " << currentComplexFunction.first << ",\n"
+                << "\t\"resolution\": " << resolution << ",\n"
+                << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
+                << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
+                << "\t\"depth\": " << std::dec << depth << ",\n"
+                << "\t\"concurent\": " << concurent << "\n"
+                << "}\n";
+
+        SDLGraphicsProvider graphicsProvider(app.arguments(), ("Static fractal view (" + currentComplexFunction.first + ")").c_str(), resolution, resolution);
         SDLEventHandler eventHandler;
 
         app.setGraphicsProvider(&graphicsProvider);
         app.setEventHandler(&eventHandler);
+
+        e172::ImageView fractalView
+                = graphicsProvider.createImage(resolution, resolution, e172::Math::filler(backgroundColor))
+                + graphicsProvider.createImage(resolution, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent));
+
+        app.addEntity(&fractalView);
+
+        return app.exec();
+    }
+
+    //default mode
+    {
+        SDLGraphicsProvider graphicsProvider(app.arguments(), ("Fractal view (" + currentComplexFunction.first + ")").c_str(), resolution, resolution);
+        SDLEventHandler eventHandler;
+
+        app.setGraphicsProvider(&graphicsProvider);
+        app.setEventHandler(&eventHandler);
+
+        FractalView fractalView(resolution, depth, colorMask, backgroundColor, currentComplexFunction.second, concurent);
+        app.addEntity(&fractalView);
 
         return app.exec();
     }
