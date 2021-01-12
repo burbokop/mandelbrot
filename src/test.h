@@ -10,17 +10,9 @@ void depth_test(std::ostream& out);
 void resolution_test(const std::string &cache_path, std::ostream& out, size_t test_count = 1024);
 
 
-
-template<typename Test, template<typename...> class Ref>
-struct is_specialization : std::false_type {};
-
-template<template<typename...> class Ref, typename... Args>
-struct is_specialization<Ref<Args...>, Ref>: std::true_type {};
-
-
 template <typename T>
 T convert_to(const e172::VariantList &list) {
-    if constexpr(is_specialization<T, std::vector>::value) {
+    if constexpr(e172::sfinae::is_specialization<T, std::vector>::value) {
         typedef typename T::value_type val_t;
         if constexpr(std::is_integral<val_t>::value || std::is_same<val_t, double>::value || std::is_same<val_t, float>::value) {
             T result;
@@ -37,7 +29,11 @@ T convert_to(const e172::VariantList &list) {
     }
 }
 
+namespace plt {
 
+typedef std::vector<double> sequence;
+typedef std::pair<sequence, sequence> sequence_pair;
+typedef std::vector<sequence> sequence_vector;
 
 class tmp_file {
     int m_fd = 0;
@@ -50,10 +46,15 @@ public:
     std::string file_path() const;
 };
 
-std::pair<std::shared_ptr<tmp_file>, std::shared_ptr<tmp_file>> write_plot(const std::vector<double> &x, const std::vector<double> &y);
-inline std::pair<std::shared_ptr<tmp_file>, std::shared_ptr<tmp_file>> write_plot(const std::pair<std::vector<double>, std::vector<double>> &values) {
-    return write_plot(values.first, values.second);
+typedef std::pair<std::shared_ptr<tmp_file>, std::shared_ptr<tmp_file>> plot;
+
+plot make_plot(const sequence &x, const sequence &y);
+inline plot make_plot(const sequence_pair &xy) {
+    return make_plot(xy.first, xy.second);
 }
 
+plot make_plots(const sequence &x, const sequence_vector &values);
+
+}
 
 #endif // TEST_H

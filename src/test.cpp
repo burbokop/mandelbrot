@@ -26,7 +26,7 @@ void depth_test(std::ostream &out) {
     }, true);
 
     out << "average:" << e172::Math::average(y) << "\n";
-    write_plot(x, y);
+    plt::make_plot(x, y);
     std::system("gnuplot ./plot.plg");
 }
 
@@ -71,18 +71,26 @@ void resolution_test(const std::string &cache_path, std::ostream &out, size_t te
     }
 
     const auto integrated_xy = e172::intergate<1>(e172::discretize<0, 1>(std::pair { x, y }, multiplier));
-    const auto differentiated_y = e172::differentiate(y, e172::Differentiator::Natural);
+    const auto differentiated_y = e172::differentiate_vec({ x, y });
+    const auto differentiated_smoosed_xy = e172::intergate<1>(e172::discretize<0, 1>(std::pair { x, differentiated_y }, multiplier));
 
-    const auto r0 = write_plot(x, y);
-    const auto r1 = write_plot(integrated_xy);
-    const auto r2 = write_plot(x, differentiated_y);
+    const auto r0 = plt::make_plot(x, y);
+    const auto r1 = plt::make_plot(integrated_xy);
+    const auto r2 = plt::make_plot(x, differentiated_y);
+    const auto r3 = plt::make_plot(differentiated_smoosed_xy);
+    const auto mr = plt::make_plots(integrated_xy.first, { integrated_xy.second, differentiated_smoosed_xy.second });
 
     std::system(("gnuplot " + r0.first->file_path()).c_str());
     std::system(("gnuplot " + r1.first->file_path()).c_str());
     std::system(("gnuplot " + r2.first->file_path()).c_str());
+    std::system(("gnuplot " + r3.first->file_path()).c_str());
+
+
+    std::system(("gnuplot " + mr.first->file_path()).c_str());
+
 }
 
-std::pair<std::shared_ptr<tmp_file>, std::shared_ptr<tmp_file> > write_plot(const std::vector<double> &x, const std::vector<double> &y) {
+plt::plot plt::make_plot(const std::vector<double> &x, const std::vector<double> &y) {
     const auto csv_file = std::make_shared<tmp_file>("csv");
     const auto plot_file = std::make_shared<tmp_file>("plg");
 
@@ -99,7 +107,37 @@ std::pair<std::shared_ptr<tmp_file>, std::shared_ptr<tmp_file> > write_plot(cons
     return { plot_file, csv_file };
 }
 
-tmp_file::tmp_file(const std::string &suffix) {
+
+plt::plot plt::make_plots(const plt::sequence &x, const plt::sequence_vector &values) {
+    const auto csv_file = std::make_shared<tmp_file>("csv");
+    const auto plot_file = std::make_shared<tmp_file>("plg");
+
+    std::stringstream stream;
+    const auto count = std::min(x.size(), std::min_element(values.begin(), values.end(), [](const sequence& a, const sequence& b){ return a.size() < b.size(); })->size());
+    for(size_t i = 0; i < count; ++i) {
+        stream << x[i] << ", ";
+
+        for(size_t j = 0; j < values.size(); ++j) {
+            stream << values[j][i];
+            if(j != values.size() - 1) {
+                stream << ", ";
+            }
+        }
+        stream << "\n";
+    }
+
+    std::string plot = "plot '" + csv_file->file_path() + "' title 'main' with lines, 1 with lines lt 1 title 'y = 1'\npause -1\n";
+    const auto csv = stream.str();
+
+    plot_file->w(plot.c_str(), plot.size());
+    csv_file->w(csv.c_str(), csv.size());
+    return { plot_file, csv_file };
+
+}
+
+
+
+plt::tmp_file::tmp_file(const std::string &suffix) {
     size_t suffixSize;
     if(suffix.size() > 0) {
         if(suffix[0] == '.') {
@@ -116,14 +154,15 @@ tmp_file::tmp_file(const std::string &suffix) {
     m_fd = mkstemps(m_file_path.data(), suffixSize);
 }
 
-tmp_file::~tmp_file() {
+plt::tmp_file::~tmp_file() {
     unlink(m_file_path.c_str());
 }
 
-ssize_t tmp_file::w(const void *ptr, size_t size) {
+ssize_t plt::tmp_file::w(const void *ptr, size_t size) {
     return write(m_fd, ptr, size);
 }
 
-std::string tmp_file::file_path() const {
+std::string plt::tmp_file::file_path() const {
     return m_file_path;
 }
+
