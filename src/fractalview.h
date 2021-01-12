@@ -17,7 +17,10 @@ class FractalView : public e172::Entity {
     e172::Vector offset;
     double zoom = 0.5;
 
-    bool doUpdate = true;
+    size_t m_updateResolutionBegin;
+    size_t m_updateResolution;
+
+    std::vector<e172::ElapsedTimer> inputTimers;
 public:
     template<typename T>
     static T exp_roof(const T& v) {
