@@ -12,28 +12,16 @@
 #include "fractalview.h"
 #include "test.h"
 
-const size_t width = 600;
-const size_t height = 600;
-
 using namespace std::complex_literals;
 
-bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, const std::string &path, size_t N, e172::MatrixFiller<e172::Color> fractal, e172::Color backgroundColor) {
-    //if(std::filesystem::exists(path))
-    //    return true;
-
+bool generateFractalImageFile(e172::AbstractGraphicsProvider *graphicsProvider, const std::string &path, size_t N, e172::MatrixFiller<e172::Color> fractal, e172::Color backgroundColor) {
     return (graphicsProvider->createImage(N, N, e172::Math::filler(backgroundColor))
             + graphicsProvider->createImage(N, N, fractal)
             ).save(path);
 }
 
-bool generateMandelbrotImage(e172::AbstractGraphicsProvider *graphicsProvider, size_t N, e172::MatrixFiller<e172::Color> fractal, const std::string& description, e172::Color backgroundColor) {
-    return generateMandelbrotImage(graphicsProvider, "./fractal" + std::to_string(N) + description + ".png", N, fractal, backgroundColor);
-}
-
-e172::Image composeWithMandelbrot(e172::AbstractGraphicsProvider *graphicsProvider, const e172::Image &image, const e172::Vector &offset, size_t depth, e172::Color mask) {
-    const auto size = image.size().min() - offset.max();
-    const auto mandelbrotImage = graphicsProvider->createImage(size, size, e172::Math::fractal<e172::Color>(depth, mask));
-    return image.blit(mandelbrotImage, offset.x(), offset.y()).fragment(offset.x(), offset.y(), size, size);
+bool generateFractalImageFile(e172::AbstractGraphicsProvider *graphicsProvider, size_t N, e172::MatrixFiller<e172::Color> fractal, const std::string& description, e172::Color backgroundColor) {
+    return generateFractalImageFile(graphicsProvider, "./fractal" + std::to_string(N) + description + ".png", N, fractal, backgroundColor);
 }
 
 int main(int argc, char **argv) {
@@ -180,7 +168,7 @@ int main(int argc, char **argv) {
                 << "}\n\n"
                 << "Started. Please wait.\n";
         e172::ElapsedTimer timer;
-        generateMandelbrotImage(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
+        generateFractalImageFile(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
         std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
         return 0;
     }

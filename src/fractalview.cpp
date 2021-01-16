@@ -42,6 +42,8 @@ void FractalView::proceed(e172::Context *, e172::AbstractEventHandler *eventHand
         m_updateResolution = m_updateResolutionBegin;
     }
 }
+
+
 #include <iostream>
 void FractalView::render(e172::AbstractRenderer *renderer) {
     if(m_resolution < m_updateResolutionBegin) {
@@ -52,6 +54,9 @@ void FractalView::render(e172::AbstractRenderer *renderer) {
         renderer->setAutoClear(false);
         renderer->fill(0);
         const size_t depth = exp_roof(m_depthMultiplier * zoom);
+        //const size_t depth = m_depthMultiplier * (zoom > 1 ? std::sqrt(zoom) : zoom);
+
+
         if(m_updateResolution > 0) {
             const size_t w = m_resolution;
             const size_t h = m_resolution;
@@ -61,7 +66,8 @@ void FractalView::render(e172::AbstractRenderer *renderer) {
             const auto bms = bmw * renderer->resolution().size_tY();
 
 
-            const auto find_rem = [this](size_t x) -> size_t { return x - x % (m_resolution / m_updateResolution); };
+            const auto deterioration_coef = m_resolution / m_updateResolution;
+            const auto find_rem = [deterioration_coef](size_t x) -> size_t { return x - x % deterioration_coef; };
 
             const auto exec_line = [bitmap, bmw, bms, this, h, w, depth, find_rem](size_t y) {
                 const auto rem_y = find_rem(y);
@@ -73,7 +79,20 @@ void FractalView::render(e172::AbstractRenderer *renderer) {
                         if(rem_x == x && rem_y == y) {
                             const auto &value = e172::Vector(double(x) / double(w) * 2 - 1, double(y) / double(h) * 2 - 1) / zoom + offset;
                             const auto level = e172::Math::fractalLevel(value.toComplex(), depth, m_function);
-                            bitmap[i] = e172::blendPixels(e172::Color(double(level) / double(depth) * m_colorMask), m_backgroundColor);
+                            const auto coef = double(level) / double(depth);
+
+                            //const auto c = e172::argb(
+                            //            255 * coef,
+                            //            255,
+                            //            255,
+                            //            255);
+
+                            const auto c = e172::Color(m_colorMask * coef);
+                            if(i == 0) {
+                                std::cout << "D: " << std::dec << depth << ", L: " << level << ", DD: " << (double(level) / double(depth)) << ", c: " << std::hex << c << "\n";
+                            }
+
+                            bitmap[i] = e172::blendPixels(c, m_backgroundColor);
                         } else {
                             bitmap[i] = bitmap[ri];
                         }

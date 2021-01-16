@@ -38,4 +38,5 @@ plot make_plots(const sequence &x, const sequence_vector &values, const std::vec
 
 }
 
+
 #endif // TEST_H

@@ -28,6 +28,11 @@ void depth_test(std::ostream &out) {
     out << "average:" << e172::Math::average(y) << "\n";
     plt::make_plot(x, y);
     std::system("gnuplot ./plot.plg");
+
+
+
+
+
 }
 
 
