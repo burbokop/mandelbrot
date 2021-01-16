@@ -41,6 +41,12 @@ void depth_test(std::ostream &out) {
 
 
 void resolution_test(const std::string &cache_path, std::ostream &out, size_t test_count) {
+    const char test_data[] = { 0x67, 0x12, 0x46, 0x66, 0x67, 0x0b, 0x20, 0x68, 0x20, 0x5f, 0x66, 0x64, 0x73, 0x10, 0x2c, 0x3f, 0x11, 0x46, 0x2d, 0x05, 0x20, 0xb, 0x03, 0x0c, 0x5, 0x7e };
+    std::cout << "test_data: " << e172::Variant(e172::VariantMap { { "data", test_data } }).toJson() << "\n";
+
+
+
+
     out << "resolution_test()\n";
     constexpr uint32_t mask = 0xffffffff;
     constexpr size_t depth = 32;
