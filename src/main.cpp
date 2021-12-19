@@ -56,21 +56,22 @@ int main(int argc, char **argv) {
     e172::Color colorMask;
     e172::Color backgroundColor;
     size_t resolution;
-    bool concurent;
+    FractalView::ComputeMode computeMode = FractalView::Simple;
 
     //flags registration
-    app.registerBoolFlag  ( "-t", "--test",             "Do optimization test"                        );
-    app.registerValueFlag ( "-C", "--test-count",       "Specify test count"                          );
-    app.registerBoolFlag  ( "-w", "--write",            "Write fractal to file"                       );
-    app.registerValueFlag ( "-f", "--func",             "Specify complex function"                    );
-    app.registerBoolFlag  ( "-l", "--func-list",        "Display list of available complex functions" );
-    app.registerBoolFlag  ( "-s", "--static-display",   "Display static image"                        );
+    app.registerBoolFlag  ( "-t", "--test",             "Do optimization test"                         );
+    app.registerValueFlag ( "-C", "--test-count",       "Specify test count"                           );
+    app.registerBoolFlag  ( "-w", "--write",            "Write fractal to file"                        );
+    app.registerValueFlag ( "-f", "--func",             "Specify complex function"                     );
+    app.registerBoolFlag  ( "-l", "--func-list",        "Display list of available complex functions"  );
+    app.registerBoolFlag  ( "-s", "--static-display",   "Display static image"                         );
 
-    app.registerValueFlag ( "-d", "--depth",            "Fractal per pixel depth"                     );
-    app.registerValueFlag ( "-m", "--color-mask",       "Fractal color mask"                          );
-    app.registerValueFlag ( "-r", "--resolution",       "Fractal resolution"                          );
-    app.registerBoolFlag  ( "-c", "--concurent",        "Use multiple threads"                        );
-    app.registerValueFlag ( "-b", "--background-color", "Background color"                            );
+    app.registerValueFlag ( "-d", "--depth",            "Fractal per pixel depth"                      );
+    app.registerValueFlag ( "-m", "--color-mask",       "Fractal color mask"                           );
+    app.registerValueFlag ( "-r", "--resolution",       "Fractal resolution"                           );
+    app.registerValueFlag ( "-c", "--compute-mode",     "Compute mode [simple=default, concurent, gpu]");
+    app.registerBoolFlag  ( "-g", "--gpu",              "Use gpu for computing"                        );
+    app.registerValueFlag ( "-b", "--background-color", "Background color"                             );
 
     //func list flag
     if(app.containsFlag("-l")) {
@@ -148,9 +149,14 @@ int main(int argc, char **argv) {
         }
     }
 
-    //concurent flag
+    //compute mode flag
     {
-        concurent = app.containsFlag("-c");
+        auto cmFlag = app.flag("-c");
+        if (cmFlag == "concurent") {
+            computeMode = FractalView::Concurent;
+        } else if (cmFlag == "gpu") {
+            computeMode = FractalView::Graphical;
+        }        
     }
 
     //write flag
@@ -164,10 +170,14 @@ int main(int argc, char **argv) {
                 << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
                 << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
                 << "\t\"depth\": " << std::dec << depth << ",\n"
-                << "\t\"concurent\": " << concurent << "\n"
+                << "\t\"compute mode\": " << FractalView::toString(computeMode) << "\n"
                 << "}\n\n"
                 << "Started. Please wait.\n";
         e172::ElapsedTimer timer;
+        if (computeMode == FractalView::Graphical) {
+            std::cout << "Warning: graphical compute mode not alloved in write mode. Used simple\n";
+        }
+        bool concurent = computeMode == FractalView::Concurent;
         generateFractalImageFile(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
         std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
         return 0;
@@ -182,8 +192,13 @@ int main(int argc, char **argv) {
                 << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
                 << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
                 << "\t\"depth\": " << std::dec << depth << ",\n"
-                << "\t\"concurent\": " << concurent << "\n"
+                << "\t\"concurent\": " << FractalView::toString(computeMode) << "\n"
                 << "}\n";
+
+        if (computeMode == FractalView::Graphical) {
+            std::cout << "Warning: graphical compute mode not alloved in static mode. Used simple\n";
+        }
+        bool concurent = computeMode == FractalView::Concurent;
 
         SDLGraphicsProvider graphicsProvider(app.arguments(), ("Static fractal view (" + currentComplexFunction.first + ")").c_str(), resolution, resolution);
         SDLEventHandler eventHandler;
@@ -208,7 +223,7 @@ int main(int argc, char **argv) {
         app.setGraphicsProvider(&graphicsProvider);
         app.setEventHandler(&eventHandler);
 
-        FractalView fractalView(resolution, depth, colorMask, backgroundColor, currentComplexFunction.second, concurent);
+        FractalView fractalView(resolution, depth, colorMask, backgroundColor, currentComplexFunction.second, computeMode);
         app.addEntity(&fractalView);
 
         return app.exec();

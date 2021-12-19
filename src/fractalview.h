@@ -6,11 +6,18 @@
 #include <src/math/math.h>
 #include <src/time/elapsedtimer.h>
 
-
 class FractalView : public e172::Entity {
     e172::ComplexFunction m_function;
     e172::Color m_colorMask, m_backgroundColor;
-    bool m_concurent;
+public:
+    enum ComputeMode {
+        Simple,
+        Concurent,
+        Graphical
+    };
+    static std::string toString(ComputeMode computeMode);
+private:
+    ComputeMode m_computeMode;
     size_t m_resolution;
     size_t m_depthMultiplier;
 
@@ -47,12 +54,20 @@ public:
         }
     }
 
-    FractalView(size_t resolution, size_t depthMultiplier, e172::Color colorMask, e172::Color backgroundColor, const e172::ComplexFunction& function = e172::Math::sqr<e172::Complex>, bool concurent = true);
+    FractalView(
+            size_t resolution,
+            size_t depthMultiplier,
+            e172::Color colorMask,
+            e172::Color backgroundColor,
+            const e172::ComplexFunction& function = e172::Math::sqr<e172::Complex>,
+            ComputeMode computeMode = Simple
+            );
 
     // Entity interface
 public:
     virtual void proceed(e172::Context *, e172::AbstractEventHandler *eventHandler) override;
     virtual void render(e172::AbstractRenderer *renderer) override;
+    ComputeMode computeMode() const;
 };
 
 #endif // FRACTALVIEW_H
