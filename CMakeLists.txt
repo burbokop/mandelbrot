@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #conan section
-message("Running conan...")
-execute_process(COMMAND conan install --build=missing ${CMAKE_CURRENT_LIST_DIR} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+#message("Running conan...")
+#execute_process(COMMAND conan install --build=missing ${CMAKE_CURRENT_LIST_DIR} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 #include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 #conan_basic_setup()
 #conan section end
