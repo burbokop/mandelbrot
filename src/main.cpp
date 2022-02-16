@@ -11,6 +11,7 @@
 #include <thread>
 #include "fractalview.h"
 #include "test.h"
+#include <console_impl/src/consolegraphicsprovider.h>
 
 using namespace std::complex_literals;
 
@@ -56,22 +57,24 @@ int main(int argc, char **argv) {
     e172::Color colorMask;
     e172::Color backgroundColor;
     size_t resolution;
+    bool fullscreen = false;
     FractalView::ComputeMode computeMode = FractalView::Simple;
 
     //flags registration
-    app.registerBoolFlag  ( "-t", "--test",             "Do optimization test"                         );
-    app.registerValueFlag ( "-C", "--test-count",       "Specify test count"                           );
-    app.registerBoolFlag  ( "-w", "--write",            "Write fractal to file"                        );
-    app.registerValueFlag ( "-f", "--func",             "Specify complex function"                     );
-    app.registerBoolFlag  ( "-l", "--func-list",        "Display list of available complex functions"  );
-    app.registerBoolFlag  ( "-s", "--static-display",   "Display static image"                         );
+    app.registerBoolFlag  ( "-t", "--test",              "Do optimization test"                         );
+    app.registerValueFlag ( "-C", "--test-count",        "Specify test count"                           );
+    app.registerBoolFlag  ( "-w", "--write",             "Write fractal to file"                        );
+    app.registerValueFlag ( "-f", "--func",              "Specify complex function"                     );
+    app.registerBoolFlag  ( "-l", "--func-list",         "Display list of available complex functions"  );
+    app.registerBoolFlag  ( "-s", "--static-display",    "Display static image"                         );
 
-    app.registerValueFlag ( "-d", "--depth",            "Fractal per pixel depth"                      );
-    app.registerValueFlag ( "-m", "--color-mask",       "Fractal color mask"                           );
-    app.registerValueFlag ( "-r", "--resolution",       "Fractal resolution"                           );
-    app.registerValueFlag ( "-c", "--compute-mode",     "Compute mode [simple=default, concurent, gpu]");
-    app.registerBoolFlag  ( "-g", "--gpu",              "Use gpu for computing"                        );
-    app.registerValueFlag ( "-b", "--background-color", "Background color"                             );
+    app.registerValueFlag ( "-d", "--depth",             "Fractal per pixel depth"                      );
+    app.registerValueFlag ( "-m", "--color-mask",        "Fractal color mask"                           );
+    app.registerValueFlag ( "-r", "--resolution",        "Fractal resolution"                           );
+    app.registerValueFlag ( "-c", "--compute-mode",      "Compute mode [simple=default, concurent, gpu]");
+    app.registerBoolFlag  ( "-g", "--gpu",               "Use gpu for computing"                        );
+    app.registerValueFlag ( "-b", "--background-color",  "Background color"                             );
+    app.registerValueFlag ( "-p", "--graphics-provider", "[sdl, console]"                               );
 
     //func list flag
     if(app.containsFlag("-l")) {
@@ -144,6 +147,8 @@ int main(int argc, char **argv) {
         auto rFlag = app.flag("-r");
         if(rFlag.isNull()) {
             resolution = 1024;
+        } else if(rFlag == "fullscreen") {
+            fullscreen = true;
         } else {
             resolution = rFlag.toSize_t();
         }
@@ -156,12 +161,42 @@ int main(int argc, char **argv) {
             computeMode = FractalView::Concurent;
         } else if (cmFlag == "gpu") {
             computeMode = FractalView::Graphical;
-        }        
+        }
+    }
+
+    std::map<std::string, std::function<e172::AbstractGraphicsProvider*(const std::string&)>> providerFactories = {
+        { "sdl", [args = app.arguments(), &resolution, fullscreen](const std::string& title) -> e172::AbstractGraphicsProvider* {
+            auto gp = new SDLGraphicsProvider(args, title.c_str(), resolution, resolution);
+            //if(fullscreen) {
+            //    resolution = gp->renderer()->screenSize().min();
+            //    gp->renderer()->setResolution(e172::Vector(resolution, resolution));
+            //}
+            //gp->renderer()->setFullscreen(fullscreen);
+            return gp;
+        }},
+        { "console", [args = app.arguments(), &resolution, fullscreen](const std::string& title) -> e172::AbstractGraphicsProvider* {
+            auto gp = new ConsoleGraphicsProvider(args, std::cout);
+            if(fullscreen) {
+                resolution = gp->renderer()->screenSize().min();
+                gp->renderer()->setResolution(e172::Vector(resolution, resolution));
+            }
+            gp->renderer()->setFullscreen(fullscreen);
+            return gp;
+        }}
+    };
+
+
+    auto providerName = app.flag("-p");
+    if(providerName.isNull()) {
+        providerName = std::string("sdl");
+    }
+    const auto providerFactoryIt = providerFactories.find(providerName.toString());
+    if(providerFactoryIt == providerFactories.end()) {
+        std::cout << "undefined graphics provider: " << providerName << "\n";
     }
 
     //write flag
     if(app.containsFlag("-w")) {
-        SDLGraphicsProvider gp(app.arguments(), {}, 0, 0);
         std::cout << "Write mode.\n";
         std::cout
                 << "Parameters {\n"
@@ -178,17 +213,23 @@ int main(int argc, char **argv) {
             std::cout << "Warning: graphical compute mode not alloved in write mode. Used simple\n";
         }
         bool concurent = computeMode == FractalView::Concurent;
-        generateFractalImageFile(&gp, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
+
+        const auto graphicsProvider = providerFactoryIt->second({});
+
+
+        generateFractalImageFile(graphicsProvider, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
         std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
         return 0;
     }
 
     //static mode
     if(app.containsFlag("-s")) {
+        auto graphicsProvider = providerFactoryIt->second("Static fractal view (" + currentComplexFunction.first + ")");
         std::cout
                 << "Parameters {\n"
                 << "\t\"complex function\": " << currentComplexFunction.first << ",\n"
                 << "\t\"resolution\": " << resolution << ",\n"
+                << "\t\"fullscreen\": " << fullscreen << ",\n"
                 << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
                 << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
                 << "\t\"depth\": " << std::dec << depth << ",\n"
@@ -200,15 +241,17 @@ int main(int argc, char **argv) {
         }
         bool concurent = computeMode == FractalView::Concurent;
 
-        SDLGraphicsProvider graphicsProvider(app.arguments(), ("Static fractal view (" + currentComplexFunction.first + ")").c_str(), resolution, resolution);
+
+
+
         SDLEventHandler eventHandler;
 
-        app.setGraphicsProvider(&graphicsProvider);
+        app.setGraphicsProvider(graphicsProvider);
         app.setEventHandler(&eventHandler);
 
         e172::ImageView fractalView
-                = graphicsProvider.createImage(resolution, resolution, e172::Math::filler(backgroundColor))
-                + graphicsProvider.createImage(resolution, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent));
+                = graphicsProvider->createImage(resolution, resolution, e172::Math::filler(backgroundColor))
+                + graphicsProvider->createImage(resolution, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent));
 
         app.addEntity(&fractalView);
 
@@ -217,11 +260,13 @@ int main(int argc, char **argv) {
 
     //default mode
     {
-        SDLGraphicsProvider graphicsProvider(app.arguments(), ("Fractal view (" + currentComplexFunction.first + ")").c_str(), resolution, resolution);
+        auto graphicsProvider = providerFactoryIt->second("Fractal view (" + currentComplexFunction.first + ")");
+
         SDLEventHandler eventHandler;
 
-        app.setGraphicsProvider(&graphicsProvider);
+        app.setGraphicsProvider(graphicsProvider);
         app.setEventHandler(&eventHandler);
+        app.setRenderInterval(1000 / 30);
 
         FractalView fractalView(resolution, depth, colorMask, backgroundColor, currentComplexFunction.second, computeMode);
         app.addEntity(&fractalView);

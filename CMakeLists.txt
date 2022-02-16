@@ -1,18 +1,12 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 
 project(mandelbrot LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#conan section
-#message("Running conan...")
-#execute_process(COMMAND conan install --build=missing ${CMAKE_CURRENT_LIST_DIR} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-#include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-#conan_basic_setup()
-#conan section end
+message("CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
-find_package(OpenCL REQUIRED)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
@@ -24,11 +18,19 @@ add_executable(mandelbrot
     src/fractalview.h
     )
 
+find_package(Boost REQUIRED)
+find_package(OpenCL REQUIRED)
+
 include(${CMAKE_CURRENT_LIST_DIR}/e172/e172.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/sdl_implementation/sdl_implementation.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/console_impl/console_impl.cmake)
+
+target_include_directories(mandelbrot PUBLIC ${Boost_INCLUDE_DIR})
 target_link_libraries(mandelbrot
     e172
     sdl_impl
+    console_impl
+    ${Boost_LIBRARIES}
+    OpenCL::OpenCL
 )
 
-target_link_libraries(mandelbrot ${CONAN_LIBS} ${OpenCL_LIBRARY})

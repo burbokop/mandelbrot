@@ -3,18 +3,20 @@
 #include <src/abstracteventhandler.h>
 #include <src/debug.h>
 #include <execution>
-
+#include <e172/src/utility/defer.h>
 #include <boost/compute/core.hpp>
+#include <e172/src/functional/metafunction.h>
 #include <boost/compute/container/vector.hpp>
 #include <boost/compute/algorithm/transform.hpp>
+#include <exception>
 
 FractalView::ComputeMode FractalView::computeMode() const {
     return m_computeMode;
 }
 
 BOOST_COMPUTE_FUNCTION(int, add_four, (int x), {
-    return x + 4;
-});
+                           return x + 4;
+                       });
 
 std::string FractalView::toString(FractalView::ComputeMode computeMode) {
     if(computeMode == Simple) {
@@ -36,7 +38,7 @@ FractalView::FractalView(size_t resolution, size_t depthMultiplier, e172::Color 
     m_function = function;
     m_computeMode = computeMode;
     inputTimers = { 64, 64, 64 };
-    m_updateResolutionBegin = m_resolution / 4;
+    m_updateResolutionBegin = m_resolution / 64;
     m_updateResolution = m_updateResolutionBegin;
 
     if (computeMode == Graphical) {
@@ -103,66 +105,73 @@ void FractalView::render(e172::AbstractRenderer *renderer) {
 
     if(m_updateResolution <= m_resolution) {
         renderer->setAutoClear(false);
-        renderer->fill(0);
+        //renderer->fill(0);
         const size_t depth = exp_roof(m_depthMultiplier * zoom);
         //const size_t depth = m_depthMultiplier * (zoom > 1 ? std::sqrt(zoom) : zoom);
 
-
+        const auto deterioration_coef = m_resolution / m_updateResolution;
+        if(deterioration_coef == 0) {
+            std::cout << "deterioration_coef is 0. " << std::to_string(m_resolution) << " / " << std::to_string(m_updateResolution) << std::endl;
+            return;
+        }
         if(m_updateResolution > 0) {
             const size_t w = m_resolution;
             const size_t h = m_resolution;
 
-            const auto bitmap = renderer->bitmap();
-            const auto bmw = renderer->resolution().size_tX();
-            const auto bms = bmw * renderer->resolution().size_tY();
+
+            renderer->modify_bitmap([this, renderer, w, h, depth, deterioration_coef](e172::Color* bitmap) {
+
+                const auto bmw = renderer->resolution().size_tX();
+                const auto bms = bmw * renderer->resolution().size_tY();
 
 
-            const auto deterioration_coef = m_resolution / m_updateResolution;
-            const auto find_rem = [deterioration_coef](size_t x) -> size_t { return x - x % deterioration_coef; };
 
-            const auto exec_line = [bitmap, bmw, bms, this, h, w, depth, find_rem](size_t y) {
-                const auto rem_y = find_rem(y);
-                for(size_t x = 0; x < w; ++x) {
-                    const auto rem_x = find_rem(x);
-                    auto i = y * bmw + x;
-                    auto ri = rem_y * bmw + rem_x;
-                    if(i >= 0 && i < bms) {
-                        if(rem_x == x && rem_y == y) {
-                            const auto &value = e172::Vector(double(x) / double(w) * 2 - 1, double(y) / double(h) * 2 - 1) / zoom + offset;
-                            const auto level = e172::Math::fractalLevel(value.toComplex(), depth, m_function);
-                            const auto coef = double(level) / double(depth);
+                const auto find_rem = [deterioration_coef](size_t x) -> size_t { return x - x % deterioration_coef; };
 
-                            const auto c = e172::Color(m_colorMask * coef);
-                            if(i == 0) {
-                                std::cout << "D: " << std::dec << depth << ", L: " << level << ", DD: " << (double(level) / double(depth)) << ", c: " << std::hex << c << "\n";
+                const auto exec_line = [bitmap, bmw, bms, this, h, w, depth, find_rem](size_t y) {
+                    const auto rem_y = find_rem(y);
+                    for(size_t x = 0; x < w; ++x) {
+                        const auto rem_x = find_rem(x);
+                        auto i = y * bmw + x;
+                        auto ri = rem_y * bmw + rem_x;
+                        if(i >= 0 && i < bms) {
+                            if(rem_x == x && rem_y == y) {
+                                const auto &value = e172::Vector(double(x) / double(w) * 2 - 1, double(y) / double(h) * 2 - 1) / zoom + offset;
+                                const auto level = e172::Math::fractalLevel(value.toComplex(), depth, m_function);
+                                const auto coef = double(level) / double(depth);
+
+                                const auto c = e172::Color(m_colorMask * coef);
+                                if(i == 0) {
+                                    std::cout << "D: " << std::dec << depth << ", L: " << level << ", DD: " << (double(level) / double(depth)) << ", c: " << std::hex << c << "\n";
+                                }
+
+                                bitmap[i] = e172::blendPixels(c, m_backgroundColor);
+                            } else {
+                                bitmap[i] = bitmap[ri];
                             }
-
-                            bitmap[i] = e172::blendPixels(c, m_backgroundColor);
-                        } else {
-                            bitmap[i] = bitmap[ri];
                         }
                     }
-                }
-            };
-            std::cout << "ccc: " << toString(m_computeMode) << "\n";
+                };
+                std::cout << "ccc: " << toString(m_computeMode) << "\n";
 
-            if(m_computeMode == Graphical) {
+                if(m_computeMode == Graphical) {
 
-            } else if(m_computeMode == Concurent) {
-                std::vector<size_t> job(h);
-                for(size_t y = 0; y < h; ++y) {
-                    job[y] = y;
+                } else if(m_computeMode == Concurent) {
+                    std::vector<size_t> job(h);
+                    for(size_t y = 0; y < h; ++y) {
+                        job[y] = y;
+                    }
+                    std::for_each(std::execution::par_unseq, job.begin(), job.end(), exec_line);
+                } else {
+                    for(size_t y = 0; y < h; ++y) {
+                        exec_line(y);
+                    }
                 }
-                std::for_each(std::execution::par_unseq, job.begin(), job.end(), exec_line);
-            } else {
-                for(size_t y = 0; y < h; ++y) {
-                    exec_line(y);
-                }
-            }
+            });
         }
 
         const auto xyz_string = "{ " + std::to_string(offset.x()) + ", " + std::to_string(offset.y()) + ", " + std::to_string(zoom) + " }";
-        const auto depth_string =  "\nDepth: " + std::to_string(depth);
+        const auto depth_string =  "\nDepth: " + std::to_string(depth) + " Deterioration: " + std::to_string(deterioration_coef);
         if(xyz_string.size() > 0) {
             std::cout << "r/ss: " << m_resolution << " / " << xyz_string.size() << "\n";
             renderer->drawString(xyz_string + depth_string, { 8, 8. }, 0xffffff, e172::TextFormat::fromFontSize(m_resolution / xyz_string.size()));
