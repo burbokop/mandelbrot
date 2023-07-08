@@ -1,16 +1,64 @@
 #include "test.h"
 
-#include <ostream>
-#include <e172/src/utility/testing.h>
-#include <e172/src/math/math.h>
-#include <src/math/intergrator.h>
-#include <src/math/discretizer.h>
-#include <src/math/differentiator.h>
-#include <unistd.h>
+#include <e172/conversion.h>
+#include <e172/math/differentiator.h>
+#include <e172/math/discretizer.h>
+#include <e172/math/intergrator.h>
+#include <e172/math/math.h>
+#include <e172/variant.h>
 #include <filesystem>
 #include <fstream>
-#include <src/variant.h>
-#include <e172/src/conversion.h>
+#include <iostream>
+
+namespace e172 {
+class Testing
+{
+public:
+    static std::vector<double> compare_test(size_t count,
+                                            const std::function<void()> &f0,
+                                            const std::function<void()> &f1,
+                                            bool verbose = false);
+
+    template<typename T, typename Iterator>
+    static std::vector<double> compare_test(Iterator begin,
+                                            Iterator end,
+                                            const std::function<void(const T &)> &f0,
+                                            const std::function<void(const T &)> &f1,
+                                            bool verbose = false)
+    {
+        std::list<double> result;
+        for (Iterator it = begin; it != end; ++it) {
+            const auto t0 = std::chrono::system_clock::now();
+            f0(*it);
+            const auto t1 = std::chrono::system_clock::now();
+            f1(*it);
+            const auto t2 = std::chrono::system_clock::now();
+            const auto c = (t2 - t1).count();
+            if (c != 0) {
+                result.push_back(double((t1 - t0).count()) / double(c));
+            } else {
+                result.push_back(std::numeric_limits<double>::max());
+            }
+            if (verbose)
+                std::cout << *it << ":" << result.back() << "\n";
+        }
+        return std::vector<double>(result.begin(), result.end());
+    }
+
+    template<typename T>
+    static std::vector<T> make_set(size_t first, T max, const std::function<T(size_t)> &f)
+    {
+        std::list<T> result;
+        for (size_t i = first;; ++i) {
+            result.push_back(f(i));
+            if (max < result.back()) {
+                break;
+            }
+        }
+        return std::vector<T>(result.begin(), result.end());
+    }
+};
+} // namespace e172
 
 void depth_test(std::ostream &out) {
     out << "depth_test()\n";
@@ -19,7 +67,7 @@ void depth_test(std::ostream &out) {
     const auto x = e172::Testing::make_set<double>(2, 64, [](size_t x){ return x; });
     const auto y = e172::Testing::compare_test<size_t>(x.begin(), x.end(), [mask](size_t depth) {
         uint32_t a[N * N];
-        e172::Math::fractal<uint32_t>(depth, mask)(N, N, a);
+        e172::Math::fractal(depth, mask)(N, N, a);
     }, [mask](size_t depth) {
         uint32_t a[N * N];
         e172::Math::fractal(depth, mask)(N, N, a);
@@ -64,10 +112,10 @@ void resolution_test(const std::string &cache_path, std::ostream &out, size_t te
         xy.first = e172::Testing::make_set<double>(2, test_count, [](size_t x){ return x * multiplier; });
         xy.second = e172::Testing::compare_test<size_t>(xy.first.begin(), xy.first.end(), [](size_t N) {
             uint32_t a[N * N];
-            e172::Math::fractal<uint32_t>(depth, mask, e172::Math::sqr<e172::Complex>, false)(N, N, a);
+            e172::Math::fractal(depth, mask, e172::Math::sqr<e172::Complex<double>>, false)(N, N, a);
         }, [](size_t N) {
             uint32_t a[N * N];
-            e172::Math::fractal<uint32_t>(depth, mask, e172::Math::sqr<e172::Complex>, true)(N, N, a);
+            e172::Math::fractal(depth, mask, e172::Math::sqr<e172::Complex<double>>, true)(N, N, a);
         }, true);
         std::fstream() << std::string();
 
@@ -76,7 +124,7 @@ void resolution_test(const std::string &cache_path, std::ostream &out, size_t te
     }
 
     const auto integrated_xy = e172::intergate<1>(e172::discretize<0, 1>(std::pair { xy.first, xy.second }, multiplier));
-    const auto differentiated_y = e172::differentiate_vec({ xy.first, xy.second });
+    const auto differentiated_y = e172::differentiateVec({xy.first, xy.second});
     const auto differentiated_smoosed_xy = e172::intergate<1>(e172::discretize<0, 1>(std::pair { xy.first, differentiated_y }, multiplier));
 
     const auto mr = plt::make_plots(integrated_xy.first, { integrated_xy.second, differentiated_smoosed_xy.second }, { 1 });

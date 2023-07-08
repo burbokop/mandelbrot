@@ -1,36 +1,20 @@
-#ifndef FRACTALVIEW_H
-#define FRACTALVIEW_H
+#pragma once
 
-#include <src/entity.h>
-#include <src/graphics/abstractrenderer.h>
-#include <src/math/math.h>
-#include <src/time/elapsedtimer.h>
+#include <e172/entity.h>
+#include <e172/graphics/abstractrenderer.h>
+#include <e172/math/math.h>
+#include <e172/time/elapsedtimer.h>
+#include <e172/utility/flagparser.h>
 
 class FractalView : public e172::Entity {
-    e172::ComplexFunction m_function;
-    e172::Color m_colorMask, m_backgroundColor;
 public:
-    enum ComputeMode {
-        Simple,
-        Concurent,
-        Graphical
-    };
+    enum class ComputeMode { CPU, CPUConcurent, GPU };
+
     static std::string toString(ComputeMode computeMode);
-private:
-    ComputeMode m_computeMode;
-    size_t m_resolution;
-    size_t m_depthMultiplier;
 
-    e172::Vector offset;
-    double zoom = 0.5;
-
-    size_t m_updateResolutionBegin;
-    size_t m_updateResolution;
-
-    std::vector<e172::ElapsedTimer> inputTimers;
-public:
     template<typename T>
-    static T exp_roof(const T& v) {
+    static T expRoof(const T &v)
+    {
         if(v < 2) {
             return 2;
         } else if(v <= 4) {
@@ -55,19 +39,48 @@ public:
     }
 
     FractalView(
-            size_t resolution,
-            size_t depthMultiplier,
-            e172::Color colorMask,
-            e172::Color backgroundColor,
-            const e172::ComplexFunction& function = e172::Math::sqr<e172::Complex>,
-            ComputeMode computeMode = Simple
-            );
+        e172::FactoryMeta &&meta,
+        std::size_t resolution,
+        std::size_t depthMultiplier,
+        e172::Color colorMask,
+        e172::Color backgroundColor,
+        const e172::ComplexFunction<double> &function = e172::Math::sqr<e172::Complex<double>>,
+        ComputeMode computeMode = ComputeMode::CPU);
+
+    ComputeMode computeMode() const;
 
     // Entity interface
 public:
-    virtual void proceed(e172::Context *, e172::AbstractEventHandler *eventHandler) override;
-    virtual void render(e172::AbstractRenderer *renderer) override;
-    ComputeMode computeMode() const;
+    void proceed(e172::Context *, e172::EventHandler *eventHandler) override;
+    void render(e172::Context *, e172::AbstractRenderer *renderer) override;
+
+private:
+    e172::ComplexFunction<double> m_function;
+    e172::Color m_colorMask, m_backgroundColor;
+
+    ComputeMode m_computeMode;
+    size_t m_resolution;
+    size_t m_depthMultiplier;
+
+    e172::Vector<double> m_offset;
+    double m_zoom = 0.5;
+
+    size_t m_updateResolutionBegin;
+    size_t m_updateResolution;
+
+    std::vector<e172::ElapsedTimer> m_inputTimers;
 };
 
-#endif // FRACTALVIEW_H
+inline e172::Either<e172::FlagParseError, FractalView::ComputeMode> operator>>(
+    e172::RawFlagValue raw, e172::TypeTag<FractalView::ComputeMode>)
+{
+    if (raw.str == "cpu") {
+        return e172::Right(FractalView::ComputeMode::CPU);
+    } else if (raw.str == "cpu-concurent") {
+        return e172::Right(FractalView::ComputeMode::CPUConcurent);
+    } else if (raw.str == "gpu") {
+        return e172::Right(FractalView::ComputeMode::GPU);
+    } else {
+        return e172::Left(e172::FlagParseError::EnumValueNotFound);
+    }
+}

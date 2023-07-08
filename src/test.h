@@ -1,9 +1,8 @@
-#ifndef TEST_H
-#define TEST_H
+#pragma once
 
+#include <e172/variant.h>
 #include <memory>
 #include <vector>
-#include <e172/src/variant.h>
 
 void depth_test(std::ostream& out);
 
@@ -37,6 +36,3 @@ inline plot make_plot(const sequence_pair &xy) {
 plot make_plots(const sequence &x, const sequence_vector &values, const std::vector<double> &horisontalLines = std::vector<double>(), int pause = -1);
 
 }
-
-
-#endif // TEST_H

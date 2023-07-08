@@ -1,275 +1,274 @@
-#include <src/additional.h>
-#include <src/gameapplication.h>
-#include <src/sdleventhandler.h>
-#include <src/sdlgraphicsprovider.h>
-#include <src/math/math.h>
-#include <src/graphics/imageview.h>
-#include <src/utility/testing.h>
-
-#include <iostream>
-#include <fstream>
-#include <thread>
+#include "flags.h"
 #include "fractalview.h"
 #include "test.h"
-#include <console_impl/src/consolegraphicsprovider.h>
+#include <e172/additional.h>
+#include <e172/gameapplication.h>
+#include <e172/graphics/imageview.h>
+#include <e172/impl/console/graphicsprovider.h>
+#include <e172/impl/sdl/eventprovider.h>
+#include <e172/impl/sdl/graphicsprovider.h>
+#include <e172/impl/vulkan/graphicsprovider.h>
+#include <e172/math/math.h>
+#include <fstream>
+#include <iostream>
+#include <thread>
 
-using namespace std::complex_literals;
-
-bool generateFractalImageFile(e172::AbstractGraphicsProvider *graphicsProvider, const std::string &path, size_t N, e172::MatrixFiller<e172::Color> fractal, e172::Color backgroundColor) {
+bool generateFractalImageFile(std::shared_ptr<e172::AbstractGraphicsProvider> graphicsProvider,
+                              const std::string &path,
+                              size_t N,
+                              e172::MatrixFiller<e172::Color> fractal,
+                              e172::Color backgroundColor)
+{
     return (graphicsProvider->createImage(N, N, e172::Math::filler(backgroundColor))
             + graphicsProvider->createImage(N, N, fractal)
             ).save(path);
 }
 
-bool generateFractalImageFile(e172::AbstractGraphicsProvider *graphicsProvider, size_t N, e172::MatrixFiller<e172::Color> fractal, const std::string& description, e172::Color backgroundColor) {
-    return generateFractalImageFile(graphicsProvider, "./fractal" + std::to_string(N) + description + ".png", N, fractal, backgroundColor);
+bool generateFractalImageFile(std::shared_ptr<e172::AbstractGraphicsProvider> graphicsProvider,
+                              std::size_t N,
+                              e172::MatrixFiller<e172::Color> fractal,
+                              const std::string &description,
+                              e172::Color backgroundColor)
+{
+    return generateFractalImageFile(std::move(graphicsProvider),
+                                    "./fractal" + std::to_string(N) + description + ".png",
+                                    N,
+                                    fractal,
+                                    backgroundColor);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv)
+{
     e172::GameApplication app(argc, argv);
 
-    //constants
-    const std::map<std::string, e172::ComplexFunction> complexFunctions = {
-        { "x", [](const auto& x){ return x; } },
-        { "sqr", e172::Math::sqr<e172::Complex> },
-        { "sin", [](const auto& x){ return std::sin(x); } },
-        { "cos", [](const auto& x){ return std::cos(x); } },
-        { "sin_sqr", [](const auto& x){ return std::sin(x * x); } },
-        { "cos_sqr", [](const auto& x){ return std::cos(x * x); } },
-        { "tan_sqr", [](const auto& x){ return std::tan(x * x); } },
-        { "asin_sqr", [](const auto& x){ return std::asin(x * x); } },
-        { "log_sqr", [](const auto& x){ return std::log(x * x); } },
-        { "exp_sqr", [](const auto& x){ return std::exp(x * x); } },
-        { "sigm_sqr", [](const auto& x){ return e172::Math::sigm(x * x); } },
-        { "floor2_sqr", [](const auto& x){ const auto t = x * x * 2.; return e172::Complex { std::floor(t.real()), std::floor(t.imag()) } / 2.; } },
-        { "floor4_sqr", [](const auto& x){ const auto t = x * x * 4.; return e172::Complex { std::floor(t.real()), std::floor(t.imag()) } / 4.; } },
-        { "floor8_sqr", [](const auto& x){ const auto t = x * x * 8.; return e172::Complex { std::floor(t.real()), std::floor(t.imag()) } / 8.; } },
-        { "floor16_sqr", [](const auto& x){ const auto t = x * x * 16.; return e172::Complex { std::floor(t.real()), std::floor(t.imag()) } / 16.; } },
-        { "floor32_sqr", [](const auto& x){ const auto t = x * x * 32.; return e172::Complex { std::floor(t.real()), std::floor(t.imag()) } / 32.; } },
-        { "sgn_sqr", [](const auto& x){ return e172::Math::sgn(x * x); } }
-    };
+    // complex functions
+    const std::map<std::string, e172::ComplexFunction<double>> complexFunctions
+        = {{"x", [](const auto &x) { return x; }},
+           {"sqr", e172::Math::sqr<e172::Complex<double>>},
+           {"sin", [](const auto &x) { return std::sin(x); }},
+           {"cos", [](const auto &x) { return std::cos(x); }},
+           {"sin_sqr", [](const auto &x) { return std::sin(x * x); }},
+           {"cos_sqr", [](const auto &x) { return std::cos(x * x); }},
+           {"tan_sqr", [](const auto &x) { return std::tan(x * x); }},
+           {"asin_sqr", [](const auto &x) { return std::asin(x * x); }},
+           {"log_sqr", [](const auto &x) { return std::log(x * x); }},
+           {"exp_sqr", [](const auto &x) { return std::exp(x * x); }},
+           {"sigm_sqr", [](const auto &x) { return e172::Math::sigm(x * x); }},
+           {"floor2_sqr",
+            [](const auto &x) {
+                const auto t = x * x * 2.;
+                return e172::Complex<double>{std::floor(t.real()), std::floor(t.imag())} / 2.;
+            }},
+           {"floor4_sqr",
+            [](const auto &x) {
+                const auto t = x * x * 4.;
+                return e172::Complex<double>{std::floor(t.real()), std::floor(t.imag())} / 4.;
+            }},
+           {"floor8_sqr",
+            [](const auto &x) {
+                const auto t = x * x * 8.;
+                return e172::Complex<double>{std::floor(t.real()), std::floor(t.imag())} / 8.;
+            }},
+           {"floor16_sqr",
+            [](const auto &x) {
+                const auto t = x * x * 16.;
+                return e172::Complex<double>{std::floor(t.real()), std::floor(t.imag())} / 16.;
+            }},
+           {"floor32_sqr",
+            [](const auto &x) {
+                const auto t = x * x * 32.;
+                return e172::Complex<double>{std::floor(t.real()), std::floor(t.imag())} / 32.;
+            }},
+           {"sgn_sqr", [](const auto &x) { return e172::Math::sgn(x * x); }}};
 
     const std::string defaultComplexFunctionName = "sqr";
+    const auto flags = Flags::parse(argc, argv, defaultComplexFunctionName);
 
-    //global variables
-    std::pair<std::string, e172::ComplexFunction> currentComplexFunction = *complexFunctions.find(defaultComplexFunctionName);
-    size_t depth;
-    e172::Color colorMask;
-    e172::Color backgroundColor;
-    size_t resolution;
-    bool fullscreen = false;
-    FractalView::ComputeMode computeMode = FractalView::Simple;
-
-    //flags registration
-    app.registerBoolFlag  ( "-t", "--test",              "Do optimization test"                         );
-    app.registerValueFlag ( "-C", "--test-count",        "Specify test count"                           );
-    app.registerBoolFlag  ( "-w", "--write",             "Write fractal to file"                        );
-    app.registerValueFlag ( "-f", "--func",              "Specify complex function"                     );
-    app.registerBoolFlag  ( "-l", "--func-list",         "Display list of available complex functions"  );
-    app.registerBoolFlag  ( "-s", "--static-display",    "Display static image"                         );
-
-    app.registerValueFlag ( "-d", "--depth",             "Fractal per pixel depth"                      );
-    app.registerValueFlag ( "-m", "--color-mask",        "Fractal color mask"                           );
-    app.registerValueFlag ( "-r", "--resolution",        "Fractal resolution"                           );
-    app.registerValueFlag ( "-c", "--compute-mode",      "Compute mode [simple=default, concurent, gpu]");
-    app.registerBoolFlag  ( "-g", "--gpu",               "Use gpu for computing"                        );
-    app.registerValueFlag ( "-b", "--background-color",  "Background color"                             );
-    app.registerValueFlag ( "-p", "--graphics-provider", "[sdl, console]"                               );
-
-    //func list flag
-    if(app.containsFlag("-l")) {
-        std::cout << "Available complex functions:\n";
+    if (flags.funcList) {
+        std::cout << "Available complex functions:" << std::endl;
         for(const auto& cf : complexFunctions) {
-            std::cout << "  " << cf.first << (cf.second.operator bool() ? "" : " (invalid)") << "\n";
+            std::cout << "  " << cf.first << (cf.second.operator bool() ? "" : " (invalid)")
+                      << std::endl;
         }
         std::cout << "Default complex function: " << defaultComplexFunctionName << "\n";
         return 0;
     }
 
-    //optimization test flag
-    if(app.containsFlag("-t")) {
-        auto test_count = app.flag("-C");
-        if(test_count.isNull())
-            test_count = 1024;
-
-        resolution_test("resolution_test_cache", std::cout, test_count.toSize_t());
+    // optimization test
+    if (flags.testMode) {
+        resolution_test("resolution_test_cache", std::cout, flags.testCount);
         std::this_thread::sleep_for(std::chrono::microseconds(4000));
         return 0;
     }
 
-    //function specification flag
-    {
-        const auto fn = app.flag("-f").toString();
-        if(fn.size() > 0) {
-            const auto it = complexFunctions.find(fn);
-            if(it != complexFunctions.end()) {
-                currentComplexFunction = *it;
-            } else {
-                std::cerr << "Error: Complex function with name '" << fn << "' not found.\n";
-                return -1;
-            }
-        }
-    }
-
-    //depth flag
-    {
-        const auto depthFlag = app.flag("-d");
-        if(depthFlag.isNull()) {
-            depth = 32;
+    const auto complexFunction = [&complexFunctions, &flags] {
+        const auto it = complexFunctions.find(flags.function);
+        if (it != complexFunctions.end()) {
+            return it->second;
         } else {
-            depth = depthFlag.toSize_t();
+            std::cerr << "error: Complex function with name '" << flags.function
+                      << "' not found.\n";
+            std::exit(2);
         }
-    }
+    }();
 
-    //color mask flag
-    {
-        const auto cmFlag = app.flag("-m");
-        if(cmFlag.isNull()) {
-            colorMask = 0xffff0000;
-        } else {
-            colorMask = std::stoul(cmFlag.toString(), nullptr, 16);
-        }
-    }
+    std::map<GraphicsProvider,
+             std::function<std::shared_ptr<e172::AbstractGraphicsProvider>(const std::string &)>>
+        providerFactories
+        = {{GraphicsProvider::SDL,
+            [args = app.arguments(),
+             &flags](const std::string &title) -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                return std::visit(e172::Overloaded{
+                                      [&args, &title](const std::uint32_t res)
+                                          -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                                          return std::make_shared<e172::impl::sdl::GraphicsProvider>(
+                                              args, title, e172::Vector<std::uint32_t>{res, res});
+                                      },
+                                      [&args, &title](const ResolutionFullscreen)
+                                          -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                                          const auto p
+                                              = std::make_shared<e172::impl::sdl::GraphicsProvider>(
+                                                  args, title, e172::Vector<std::uint32_t>());
+                                          const auto resolution = p->renderer()->screenSize().min();
+                                          p->renderer()->setResolution(
+                                              e172::Vector(resolution, resolution));
+                                          p->renderer()->setFullscreen(true);
+                                          return p;
+                                      },
+                                  },
+                                  flags.resolution);
+            }},
+           {GraphicsProvider::Console,
+            [args = app.arguments(),
+             &flags](const std::string &title) -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                return std::visit(
+                    e172::Overloaded{
+                        [&args, &title](const std::uint32_t res)
+                            -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                            return std::make_shared<e172::impl::console::GraphicsProvider>(args,
+                                                                                           std::cout);
+                        },
+                        [&args, &title](const ResolutionFullscreen)
+                            -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                            const auto p
+                                = std::make_shared<e172::impl::console::GraphicsProvider>(args,
+                                                                                          std::cout);
+                            const auto resolution = p->renderer()->screenSize().min();
+                            p->renderer()->setResolution(e172::Vector(resolution, resolution));
+                            p->renderer()->setFullscreen(true);
+                            return p;
+                        },
+                    },
+                    flags.resolution);
+            }},
+           {GraphicsProvider::Vulkan,
+            [args = app.arguments(),
+             &flags](const std::string &title) -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                return std::visit(
+                    e172::Overloaded{
+                        [&args, &title](const std::uint32_t res)
+                            -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                            const auto p = std::make_shared<e172::impl::vulkan::GraphicsProvider>(
+                                args);
+                            p->renderer()->setResolution(e172::Vector<double>(res, res));
+                            return p;
+                        },
+                        [&args, &title](const ResolutionFullscreen)
+                            -> std::shared_ptr<e172::AbstractGraphicsProvider> {
+                            const auto p = std::make_shared<e172::impl::vulkan::GraphicsProvider>(
+                                args);
+                            const auto resolution = p->renderer()->screenSize().min();
+                            p->renderer()->setResolution(e172::Vector(resolution, resolution));
+                            p->renderer()->setFullscreen(true);
+                            return p;
+                        },
+                    },
+                    flags.resolution);
+            }}};
 
-    //background color flag
-    {
-        const auto flag = app.flag("-b");
-        if(flag.isNull()) {
-            backgroundColor = 0xffffffff;
-        } else {
-            std::cout << "bg flag: " << flag << "\n";
-            backgroundColor = std::stoul(flag.toString(), nullptr, 16);
-        }
-    }
-
-    //resolution flag
-    {
-        auto rFlag = app.flag("-r");
-        if(rFlag.isNull()) {
-            resolution = 1024;
-        } else if(rFlag == "fullscreen") {
-            fullscreen = true;
-        } else {
-            resolution = rFlag.toSize_t();
-        }
-    }
-
-    //compute mode flag
-    {
-        auto cmFlag = app.flag("-c");
-        if (cmFlag == "concurent") {
-            computeMode = FractalView::Concurent;
-        } else if (cmFlag == "gpu") {
-            computeMode = FractalView::Graphical;
-        }
-    }
-
-    std::map<std::string, std::function<e172::AbstractGraphicsProvider*(const std::string&)>> providerFactories = {
-        { "sdl", [args = app.arguments(), &resolution, fullscreen](const std::string& title) -> e172::AbstractGraphicsProvider* {
-            auto gp = new SDLGraphicsProvider(args, title.c_str(), resolution, resolution);
-            //if(fullscreen) {
-            //    resolution = gp->renderer()->screenSize().min();
-            //    gp->renderer()->setResolution(e172::Vector(resolution, resolution));
-            //}
-            //gp->renderer()->setFullscreen(fullscreen);
-            return gp;
-        }},
-        { "console", [args = app.arguments(), &resolution, fullscreen](const std::string& title) -> e172::AbstractGraphicsProvider* {
-            auto gp = new ConsoleGraphicsProvider(args, std::cout);
-            if(fullscreen) {
-                resolution = gp->renderer()->screenSize().min();
-                gp->renderer()->setResolution(e172::Vector(resolution, resolution));
-            }
-            gp->renderer()->setFullscreen(fullscreen);
-            return gp;
-        }}
-    };
-
-
-    auto providerName = app.flag("-p");
-    if(providerName.isNull()) {
-        providerName = std::string("sdl");
-    }
-    const auto providerFactoryIt = providerFactories.find(providerName.toString());
-    if(providerFactoryIt == providerFactories.end()) {
-        std::cout << "undefined graphics provider: " << providerName << "\n";
-    }
+    const auto providerFactory = providerFactories.at(flags.graphicsProvider);
 
     //write flag
-    if(app.containsFlag("-w")) {
-        std::cout << "Write mode.\n";
-        std::cout
-                << "Parameters {\n"
-                << "\t\"complex function\": " << currentComplexFunction.first << ",\n"
-                << "\t\"resolution\": " << resolution << ",\n"
-                << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
-                << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
-                << "\t\"depth\": " << std::dec << depth << ",\n"
-                << "\t\"compute mode\": " << FractalView::toString(computeMode) << "\n"
-                << "}\n\n"
-                << "Started. Please wait.\n";
+    if (flags.writeMode) {
+        std::cout << "Write mode." << std::endl;
+        std::cout << "Parameters {" << std::endl
+                  << "\t\"complex function\": " << flags.function << "," << std::endl
+                  << "\t\"resolution\": " << flags.resolution << "," << std::endl
+                  << "\t\"color mask\": 0x" << std::hex << flags.colorMask << "," << std::endl
+                  << "\t\"background color\": 0x" << std::hex << flags.backgroundColor << ","
+                  << std::endl
+                  << "\t\"depth\": " << std::dec << flags.depth << "," << std::endl
+                  << "\t\"compute mode\": " << FractalView::toString(flags.computeMode) << std::endl
+                  << "}" << std::endl
+                  << std::endl
+                  << "Started. Please wait." << std::endl;
+
         e172::ElapsedTimer timer;
-        if (computeMode == FractalView::Graphical) {
+        if (flags.computeMode == FractalView::ComputeMode::GPU) {
             std::cout << "Warning: graphical compute mode not alloved in write mode. Used simple\n";
         }
-        bool concurent = computeMode == FractalView::Concurent;
-
-        const auto graphicsProvider = providerFactoryIt->second({});
-
-
-        generateFractalImageFile(graphicsProvider, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent), "D" + std::to_string(depth) + "F" + currentComplexFunction.first, backgroundColor);
-        std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms.\n";
+        const bool concurent = flags.computeMode == FractalView::ComputeMode::CPUConcurent;
+        const auto graphicsProvider = providerFactory({});
+        generateFractalImageFile(graphicsProvider,
+                                 std::get<std::uint32_t>(flags.resolution),
+                                 e172::Math::fractal(flags.depth,
+                                                     flags.colorMask,
+                                                     complexFunction,
+                                                     concurent),
+                                 "D" + std::to_string(flags.depth) + "F" + flags.function,
+                                 flags.backgroundColor);
+        std::cout << "Finished.\nElapsed: " << timer.elapsed() << " ms." << std::endl;
         return 0;
     }
 
-    //static mode
-    if(app.containsFlag("-s")) {
-        auto graphicsProvider = providerFactoryIt->second("Static fractal view (" + currentComplexFunction.first + ")");
-        std::cout
-                << "Parameters {\n"
-                << "\t\"complex function\": " << currentComplexFunction.first << ",\n"
-                << "\t\"resolution\": " << resolution << ",\n"
-                << "\t\"fullscreen\": " << fullscreen << ",\n"
-                << "\t\"color mask\": 0x" << std::hex << colorMask << ",\n"
-                << "\t\"background color\": 0x" << std::hex << backgroundColor << ",\n"
-                << "\t\"depth\": " << std::dec << depth << ",\n"
-                << "\t\"concurent\": " << FractalView::toString(computeMode) << "\n"
-                << "}\n";
+    // static mode
+    if (flags.staticDisplay) {
+        auto graphicsProvider = providerFactory("Static fractal view (" + flags.function + ")");
+        std::cout << "Parameters {" << std::endl
+                  << "\t\"complex function\": " << flags.function << "," << std::endl
+                  << "\t\"resolution\": " << flags.resolution << "," << std::endl
+                  << "\t\"color mask\": 0x" << std::hex << flags.colorMask << "," << std::endl
+                  << "\t\"background color\": 0x" << std::hex << flags.backgroundColor << ","
+                  << std::endl
+                  << "\t\"depth\": " << std::dec << flags.depth << "," << std::endl
+                  << "\t\"concurent\": " << FractalView::toString(flags.computeMode) << std::endl
+                  << "}" << std::endl;
 
-        if (computeMode == FractalView::Graphical) {
+        if (flags.computeMode == FractalView::ComputeMode::GPU) {
             std::cout << "Warning: graphical compute mode not alloved in static mode. Used simple\n";
         }
-        bool concurent = computeMode == FractalView::Concurent;
-
-
-
-
-        SDLEventHandler eventHandler;
+        bool concurent = flags.computeMode == FractalView::ComputeMode::CPUConcurent;
 
         app.setGraphicsProvider(graphicsProvider);
-        app.setEventHandler(&eventHandler);
+        app.setEventProvider(std::make_shared<e172::impl::sdl::EventProvider>());
 
-        e172::ImageView fractalView
-                = graphicsProvider->createImage(resolution, resolution, e172::Math::filler(backgroundColor))
-                + graphicsProvider->createImage(resolution, resolution, e172::Math::fractal(depth, colorMask, currentComplexFunction.second, concurent));
-
-        app.addEntity(&fractalView);
-
+        app.addEntity(e172::FactoryMeta::make<e172::ImageView>(
+            graphicsProvider->createImage(std::get<std::uint32_t>(flags.resolution),
+                                          std::get<std::uint32_t>(flags.resolution),
+                                          e172::Math::filler(flags.backgroundColor))
+            + graphicsProvider->createImage(std::get<std::uint32_t>(flags.resolution),
+                                            std::get<std::uint32_t>(flags.resolution),
+                                            e172::Math::fractal(flags.depth,
+                                                                flags.colorMask,
+                                                                complexFunction,
+                                                                concurent))));
         return app.exec();
     }
 
     //default mode
     {
-        auto graphicsProvider = providerFactoryIt->second("Fractal view (" + currentComplexFunction.first + ")");
-
-        SDLEventHandler eventHandler;
+        auto graphicsProvider = providerFactory("Fractal view (" + flags.function + ")");
 
         app.setGraphicsProvider(graphicsProvider);
-        app.setEventHandler(&eventHandler);
+        app.setEventProvider(std::make_shared<e172::impl::sdl::EventProvider>());
         app.setRenderInterval(1000 / 30);
 
-        FractalView fractalView(resolution, depth, colorMask, backgroundColor, currentComplexFunction.second, computeMode);
-        app.addEntity(&fractalView);
+        app.addEntity(e172::FactoryMeta::make<FractalView>(std::get<std::uint32_t>(flags.resolution),
+                                                           flags.depth,
+                                                           flags.colorMask,
+                                                           flags.backgroundColor,
+                                                           complexFunction,
+                                                           flags.computeMode));
 
         return app.exec();
     }
